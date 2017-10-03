@@ -1,1 +1,1 @@
-default_app_config = 'wassup.rapidpro.integration.apps.IntegrationConfig'
+default_app_config = 'warapidpro.apps.IntegrationConfig'
