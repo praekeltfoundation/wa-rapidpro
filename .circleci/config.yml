@@ -1,7 +1,7 @@
 version: 2
 jobs:
     build:
-        working_directory: /rapidpro/
+        working_directory: /rapidpro/warapidpro
         docker:
             -   image: praekeltfoundation/rapidpro:v3
                 environment:
