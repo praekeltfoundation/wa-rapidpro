@@ -15,7 +15,6 @@ jobs:
                     POSTGRES_DB: rapidpro
                     POSTGRES_PASSWORD: rapidpro
         steps:
-            -   setup_remote_docker
             -   checkout
             -   run:
                     name: "Run RapidPro checks"
