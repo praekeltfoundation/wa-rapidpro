@@ -1,41 +1,23 @@
 version: 2
 jobs:
     build:
-        working_directory: ~/app
+        working_directory: /rapidpro/
         docker:
-            -   image: circleci/python:3.6
+            -   image: praekeltfoundation/rapidpro:v3
                 environment:
                     PIP_EXTRA_INDEX_URL: https://jessie.wheelhouse.praekelt.org/simple/
+                    DATABASE_URL: postgis://rapidpro:rapidpro@localhost/rapidpro
+                    EXTRA_INSTALLED_APPS: warapidpro
+                    SECRET_KEY: 'really-quite-obvious'
             -   image: mdillon/postgis:9.4
                 environment:
                     POSTGRES_USER: rapidpro
                     POSTGRES_DB: rapidpro
                     POSTGRES_PASSWORD: rapidpro
-            # -   image: praekeltfoundation/rapidpro:v3
-            #     environment:
-            #         EXTRA_INSTALLED_APPS: warapidpro
-            #         SECRET_KEY: 'really-quite-obvious'
-            #         DATABASE_URL: postgis://rapidpro:rapidpro@localhost/rapidpro
         steps:
             -   setup_remote_docker
             -   checkout
             -   run:
                     name: "Run RapidPro checks"
                     command: |
-                        GREP_TIMEOUT=60
-                        docker create -v /rapidpro/warapidpro --name warapidpro alpine:3.4 /bin/true
-                        docker cp ~/app/warapidpro configs:/rapidpro/warapidpro
-                        docker pull mdillon/postgis:9.6
-                        docker run -d --name postgresql -e POSTGRES_DB=rapidpro mdillon/postgis:9.6
-                        timeout $GREP_TIMEOUT grep -m 1 'PostgreSQL init process complete; ready for start up.' <(docker logs --follow postgresql 2>&1)
-                        docker pull redis:alpine
-                        docker run -d --name redis redis:alpine
-                        timeout $GREP_TIMEOUT grep -m 1 'Ready to accept connections' <(docker logs --follow redis 2>&1)
-                        docker run \
-                            --volumes-from warapidpro
-                            --name rapidpro \
-                            --link redis \
-                            --link postgresql \
-                            --publish 8000:8000 \
-                            -v ~/app:/rapidpro/warapidpro \
-                            praekeltfoundation/rapidpro:v3 /rapidpro/manage.py test warapidpro -v3
+                        /venv/bin/python /rapidpro/manage.py test warapidpro -v3
