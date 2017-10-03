@@ -138,7 +138,7 @@ class WhatsAppDirectTypeTest(TembaTest):
             callback=cb, content_type='application/json')
 
         fixture = pkg_resources.resource_filename(
-            'wassup', 'web/tests/fixtures/placeholder-640x640.jpg')
+            'warapidpro', 'tests/fixtures/placeholder-640x640.jpg')
         with open(fixture, 'rb') as fp:
             responses.add(responses.GET, 'https://example.com/pic.jpg',
                           body=fp.read(), content_type='image/jpg', status=200,
