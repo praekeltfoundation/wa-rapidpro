@@ -25,3 +25,20 @@ jobs:
                         # Give mdillon/postgis some time to get its act together
                         sleep 20
                         /venv/bin/python /rapidpro/manage.py test warapidpro -v2
+            -   run:
+                    name: "Auto deploy"
+                    when: on_success
+                    command: |
+                        VERSION=$(git describe --always)
+                        if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" && git branch | grep "\* develop";
+                        then
+                            # build package and upload to private pypi index
+                            echo "[distutils]" >> ~/.pypirc
+                            echo "index-servers = pypi" >> ~/.pypirc
+                            echo "[pypi]" >> ~/.pypirc
+                            echo "username=$PYPI_USERNAME" >> ~/.pypirc
+                            echo "password=$PYPI_PASSWORD" >> ~/.pypirc
+                            python setup.py sdist bdist_wheel
+                            /venv/bin/pip install twine
+                            /venv/bin/twine upload dist/*
+                        fi
