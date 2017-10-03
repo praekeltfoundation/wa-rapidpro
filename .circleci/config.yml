@@ -33,7 +33,7 @@ jobs:
                         apk add git
                         cd /rapidpro/warapidpro
                         VERSION=$(git describe --always)
-                        if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" && git branch | grep "\* develop";
+                        if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
                         then
                             # build package and upload to private pypi index
                             echo "[distutils]" >> ~/.pypirc
