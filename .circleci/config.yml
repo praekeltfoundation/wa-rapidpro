@@ -9,6 +9,7 @@ jobs:
                     DATABASE_URL: postgis://rapidpro:rapidpro@localhost/rapidpro
                     REDIS_URL: redis://localhost:6379/0
                     EXTRA_INSTALLED_APPS: warapidpro
+                    RAPIDPRO_VERSION: 3
                     SECRET_KEY: 'really-quite-obvious'
             -   image: mdillon/postgis:9.4
                 environment:
