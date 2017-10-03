@@ -11,7 +11,7 @@ jobs:
                     EXTRA_INSTALLED_APPS: warapidpro
                     RAPIDPRO_VERSION: 3
                     SECRET_KEY: 'really-quite-obvious'
-            -   image: circleci/postgres:9.4-postgis
+            -   image: mdillon/postgis:9.4
                 environment:
                     POSTGRES_USER: rapidpro
                     POSTGRES_DB: rapidpro
