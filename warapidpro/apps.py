@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class IntegrationConfig(AppConfig):
-    name = 'wassup.rapidpro.integration'
+    name = 'warapidpro'
     # NOTE: This is to maintain backwards compatibility with
     #       existing installations this was extracted from
     label = 'integration'
