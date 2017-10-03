@@ -1,21 +1,18 @@
 import responses
 import pkg_resources
-import pytest
 import json
 from django.test import override_settings
 from mock import Mock, patch
 
-tests = pytest.importorskip('temba.tests')
-types = pytest.importorskip("warapidpro.types")
-channel_models = pytest.importorskip('temba.channels.models')
-temba_utils = pytest.importorskip('temba.utils')
+from temba.tests import TembaTest
 
-Channel = channel_models.Channel
-WhatsAppDirectType = types.WhatsAppDirectType
-WhatsAppGroupType = types.WhatsAppGroupType
+from temba.channels.models import Channel
+from warapidpro.types import WhatsAppDirectType, WhatsAppGroupType
+
+from temba.utils import dict_to_struct
 
 
-class WhatsAppDirectTypeTest(tests.TembaTest):
+class WhatsAppDirectTypeTest(TembaTest):
     """
     NOTE: Run these tests from the RapidPro repository / virtualenv
     """
@@ -111,9 +108,9 @@ class WhatsAppDirectTypeTest(tests.TembaTest):
 
         joe = self.create_contact("Joe Biden", "+254788383383")
         msg = joe.send("Hey Joe, it's Obama, pick up!", self.admin)[0]
-        msg_struct = temba_utils.dict_to_struct(
+        msg_struct = dict_to_struct(
             'MsgStruct', msg.as_task_json())
-        channel_struct = temba_utils.dict_to_struct(
+        channel_struct = dict_to_struct(
             'ChannelStruct', self.channel.as_cached_json())
 
         with patch('temba.channels.models.Channel.success') as patch_success:
@@ -153,9 +150,9 @@ class WhatsAppDirectTypeTest(tests.TembaTest):
         msg = joe.send(
             "Hey Joe, it's Obama, pick up!", self.admin,
             attachments=['image/jpeg:https://example.com/pic.jpg'])[0]
-        msg_struct = temba_utils.dict_to_struct(
+        msg_struct = dict_to_struct(
             'MsgStruct', msg.as_task_json())
-        channel_struct = temba_utils.dict_to_struct(
+        channel_struct = dict_to_struct(
             'ChannelStruct', self.channel.as_cached_json())
 
         with patch('temba.channels.models.Channel.success') as patch_success:
@@ -167,7 +164,7 @@ class WhatsAppDirectTypeTest(tests.TembaTest):
         self.assertEqual(kwargs['external_id'], 'the-uuid')
 
 
-class WhatsAppGroupTypeTest(tests.TembaTest):
+class WhatsAppGroupTypeTest(TembaTest):
     """
     NOTE: Run these tests from the RapidPro repository / virtualenv
     """
@@ -278,9 +275,9 @@ class WhatsAppGroupTypeTest(tests.TembaTest):
 
         joe = self.create_contact("Joe Biden", "+254788383383")
         msg = joe.send("Hey Joe, it's Obama, pick up!", self.admin)[0]
-        msg_struct = temba_utils.dict_to_struct(
+        msg_struct = dict_to_struct(
             'MsgStruct', msg.as_task_json())
-        channel_struct = temba_utils.dict_to_struct(
+        channel_struct = dict_to_struct(
             'ChannelStruct', self.channel.as_cached_json())
         text = 'the text to send'
 

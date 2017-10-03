@@ -1,27 +1,16 @@
-import pytest
 import json
 from django.test import RequestFactory
 
-tests = pytest.importorskip('temba.tests')
+from temba.tests import TembaTest
 
-org_models = pytest.importorskip('temba.orgs.models')
-Org = org_models.Org
+from temba.msgs.models import Msg, DELIVERED, FAILED
 
-msg_models = pytest.importorskip('temba.msgs.models')
-Msg = msg_models.Msg
-
-channel_models = pytest.importorskip('temba.channels.models')
-Channel = channel_models.Channel
-
-handlers = pytest.importorskip("warapidpro.handlers")
-WhatsAppHandler = handlers.WhatsAppHandler
-
-types = pytest.importorskip("warapidpro.types")
-WhatsAppDirectType = types.WhatsAppDirectType
-WhatsAppGroupType = types.WhatsAppGroupType
+from temba.channels.models import Channel
+from warapidpro.handlers import WhatsAppHandler
+from warapidpro.types import WhatsAppDirectType, WhatsAppGroupType
 
 
-class DirectHandlerTest(tests.TembaTest):
+class DirectHandlerTest(TembaTest):
 
     def setUp(self):
         super(DirectHandlerTest, self).setUp()
@@ -76,11 +65,11 @@ class DirectHandlerTest(tests.TembaTest):
             sms = Msg.objects.get(pk=sms.id)
             self.assertEquals(assert_status, sms.status)
 
-        assertStatus(msg, 'delivered', msg_models.DELIVERED)
-        assertStatus(msg, 'failed', msg_models.FAILED)
+        assertStatus(msg, 'delivered', DELIVERED)
+        assertStatus(msg, 'failed', FAILED)
 
 
-class GroupHandlerTest(tests.TembaTest):
+class GroupHandlerTest(TembaTest):
 
     def setUp(self):
         super(GroupHandlerTest, self).setUp()
@@ -155,5 +144,5 @@ class GroupHandlerTest(tests.TembaTest):
             sms = Msg.objects.get(pk=sms.id)
             self.assertEquals(assert_status, sms.status)
 
-        assertStatus(msg, 'delivered', msg_models.DELIVERED)
-        assertStatus(msg, 'failed', msg_models.FAILED)
+        assertStatus(msg, 'delivered', DELIVERED)
+        assertStatus(msg, 'failed', FAILED)
