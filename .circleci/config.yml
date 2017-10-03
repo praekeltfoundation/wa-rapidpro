@@ -29,6 +29,8 @@ jobs:
                     name: "Auto deploy"
                     when: on_success
                     command: |
+                        apk update
+                        apk add git
                         VERSION=$(git describe --always)
                         if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" && git branch | grep "\* develop";
                         then
