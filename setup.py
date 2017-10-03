@@ -11,12 +11,6 @@ except ImportError:
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('requirements.txt') as req_file:
-    requirements = req_file.read().split('\n')
-
-with open('requirements-dev.txt') as req_file:
-    requirements_dev = req_file.read().split('\n')
-
 with open('VERSION') as fp:
     version = fp.read().strip()
 
@@ -34,10 +28,7 @@ setup(
     package_dir={'warapidpro':
                  'warapidpro'},
     include_package_data=True,
-    install_requires=requirements,
-    extras_require={
-        'dev': requirements_dev,
-    },
+    install_requires=[],
     zip_safe=False,
     keywords='warapidpro',
     classifiers=[
