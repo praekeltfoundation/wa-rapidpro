@@ -24,4 +24,4 @@ jobs:
                     command: |
                         # Give mdillon/postgis some time to get its act together
                         sleep 20
-                        /venv/bin/python /rapidpro/manage.py test warapidpro -v3
+                        /venv/bin/python /rapidpro/manage.py test warapidpro -v2
