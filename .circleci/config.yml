@@ -43,5 +43,5 @@ jobs:
                             echo "password=$PYPI_PASSWORD" >> ~/.pypirc
                             python setup.py sdist bdist_wheel
                             /venv/bin/pip install twine
-                            /venv/bin/twine upload dist/*
+                            /venv/bin/twine upload --skip-existing dist/*
                         fi
