@@ -114,11 +114,12 @@ class WhatsAppHandler(BaseChannelHandler):
         from_addr = data['from_addr']
         content = self.get_content(data)
         attachments = self.get_attachments(data)
-        group_uuid = data['group']
+        group_uuid = data.get('group', {}).get('uuid')
 
         # The group webhook receives messages for all groups,
         # only grab the message if it's a group we're a channel for.
         if channel.config_json()['group_uuid'] != group_uuid:
+            logger.info('Received message for a different group.')
             return JsonResponse({}, status=200)
 
         message = Msg.create_incoming(

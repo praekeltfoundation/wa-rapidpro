@@ -93,7 +93,9 @@ class GroupHandlerTest(TembaTest):
                 'uuid': 'the-uuid',
                 'from_addr': '+31000000000',
                 'to_addr': '+27000000000',
-                'group': 'the-group-uuid',
+                'group': {
+                    'uuid': 'the-group-uuid',
+                },
                 'content': 'hello world',
             }
         }), content_type='application/json')
@@ -113,7 +115,9 @@ class GroupHandlerTest(TembaTest):
                 'uuid': 'the-uuid',
                 'from_addr': '+31000000000',
                 'to_addr': '+27000000000',
-                'group': 'another-groups-uuid',
+                'group': {
+                    'uuid': 'another-groups-uuid',
+                },
                 'content': 'hello world',
             }
         }), content_type='application/json')
