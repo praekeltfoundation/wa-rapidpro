@@ -111,24 +111,28 @@ class WhatsAppType(ChannelType):
         # Grab the first attachment if it exists
         attachments = Attachment.parse_all(msg.attachments)
         attachment = attachments[0] if attachments else None
-        if attachment:
-            files = self.fetch_attachment(attachment)
-            data = payload
-        else:
-            headers.update({
-                'Content-Type': 'application/json'
-            })
-            data = json.dumps(payload)
-            files = {}
 
         try:
+            if attachment:
+                files = self.fetch_attachment(attachment)
+                data = payload
+            else:
+                headers.update({
+                    'Content-Type': 'application/json'
+                })
+                data = json.dumps(payload)
+                files = {}
+
             response = requests.post(
                 url, data=data, files=files, headers=headers)
             response.raise_for_status()
             event.status_code = response.status_code
             event.response_body = response.text
         except (requests.RequestException,) as e:
-            raise SendException(six.u(e), event=event, start=start)
+            raise SendException(
+                'error: %s, response: %s' % (
+                    six.text_type(e), e.response.content),
+                event=event, start=start)
 
         data = response.json()
         try:
