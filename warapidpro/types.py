@@ -130,8 +130,8 @@ class WhatsAppType(ChannelType):
             event.response_body = response.text
         except (requests.RequestException,) as e:
             raise SendException(
-                'error: %s, response: %s' % (
-                    six.text_type(e), e.response.content),
+                'error: %s, request: %s, response: %s' % (
+                    six.text_type(e), e.request.data, e.response.content),
                 event=event, start=start)
 
         data = response.json()
