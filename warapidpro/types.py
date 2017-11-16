@@ -130,7 +130,7 @@ class WhatsAppType(ChannelType):
             event.response_body = response.text
         except (requests.RequestException,) as e:
             raise SendException(
-                'error: %s, request: %s, response: %s' % (
+                'error: %s, request: %r, response: %r' % (
                     six.text_type(e), e.request.body, e.response.content),
                 event=event, start=start)
 
