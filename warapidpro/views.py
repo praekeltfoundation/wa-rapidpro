@@ -79,8 +79,8 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
 
     def get_number_choices(self, api_token):
         return [(
-            '+%(country_code)s%(number)s' % number,
-            '+%(country_code)s%(number)s' % number,
+            '%(from_addr)s' % number,
+            '%(from_addr)s' % number,
         ) for number in self.get_numbers(api_token)]
 
     def get_groups(self, api_token):
