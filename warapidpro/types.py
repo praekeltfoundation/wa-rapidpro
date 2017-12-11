@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class WhatsAppType(ChannelType):
     category = ChannelType.Category.SOCIAL_MEDIA
     scheme = TEL_SCHEME
-    max_length = 1600
+    max_length = 4096
     max_tps = None
     attachment_support = True
     free_sending = True
