@@ -152,6 +152,7 @@ class WhatsAppDirectType(WhatsAppType):
 
     claim_blurb = 'Claim your direct WhatsApp Channel'
     claim_view = DirectClaimView
+    show_config_page = False
     code = 'WAD'
     slug = 'wad'
     name = 'WhatsApp Direct'
@@ -201,6 +202,7 @@ class WhatsAppGroupType(WhatsAppType):
 
     claim_blurb = 'Claim your WhatsApp Group Channel'
     claim_view = GroupClaimView
+    show_config_page = False
     code = 'WAG'
     slug = 'wag'
     name = 'WhatsApp Group'

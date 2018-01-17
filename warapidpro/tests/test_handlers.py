@@ -19,7 +19,7 @@ class DirectHandlerTest(TembaTest):
         self.channel = Channel.create(
             self.org, self.user, 'RW', WhatsAppDirectType.code,
             None, '+27000000000',
-            config=dict(api_token='api-token', secret='secret'),
+            config=dict(access_token='access-token', secret='secret'),
             uuid='00000000-0000-0000-0000-000000001234',
             role=Channel.DEFAULT_ROLE)
 
@@ -78,7 +78,7 @@ class GroupHandlerTest(TembaTest):
         self.channel = Channel.create(
             self.org, self.user, 'RW', WhatsAppGroupType.code,
             None, '+27000000000',
-            config=dict(api_token='api-token',
+            config=dict(access_token='access_token',
                         secret='secret',
                         group_uuid='the-group-uuid'),
             uuid='00000000-0000-0000-0000-000000001234',

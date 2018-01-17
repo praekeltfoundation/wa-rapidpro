@@ -1,7 +1,11 @@
 import requests
+import urllib
+from datetime import datetime, timedelta
+from uuid import uuid4
 from django import forms
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
 from smartmin.views import SmartFormView
@@ -10,67 +14,128 @@ from temba.channels.views import ClaimViewMixin
 from temba.channels.models import Channel
 
 
-class TokenForm(ClaimViewMixin.Form):
-    api_token = forms.CharField(
-        max_length=150, required=True,
-        help_text=_("The API Token for WhatsApp integration"))
-
-    def wassup_url(self):
-        return getattr(
-            settings, 'WASSUP_API_URL', 'https://wassup.p16n.org/api/v1')
-
-    def clean_api_token(self):
-        value = self.cleaned_data['api_token']
-
-        response = requests.get(
-            '%s/numbers/' % (self.wassup_url(),),
-            headers={
-                'Authorization': 'Token %s' % (value,)
-            })
-        if response.status_code != 200:
-            raise ValidationError(
-                _("Invalid API Token, please check it and try again."))
-        return value
+DEFAULT_STATE_KEY = 'wassup_auth_state'
+DEFAULT_AUTHORIZATION_KEY = 'wassup_authorizations'
+DEFAULT_AUTH_URL = 'https://wassup.p16n.org'
+DEFAULT_SCOPES = " ".join([
+    "numbers:read",
+    "messages:read",
+    "messages:write",
+    "websocket:read",
+    "profile:read",
+])
 
 
 class NumberForm(ClaimViewMixin.Form):
 
-    api_token = forms.CharField(required=True)
     number = forms.ChoiceField(
         required=True,
         help_text=_('Which number would you like to connect?'))
 
-    def __init__(self, *args, **kwargs):
-        super(NumberForm, self).__init__(*args, **kwargs)
-        self.fields['api_token'].widget.attrs['readonly'] = True
-
 
 class GroupForm(ClaimViewMixin.Form):
 
-    api_token = forms.CharField(required=True)
     group = forms.ChoiceField(
         required=True,
         help_text=_('Which group would you like to connect?'))
 
-    def __init__(self, *args, **kwargs):
-        super(GroupForm, self).__init__(*args, **kwargs)
-        self.fields['api_token'].widget.attrs['readonly'] = True
-
 
 class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
 
-    # Subclasses should specify this
-    claim_form_class = None
+    def pre_process(self, *args, **kwargs):
+        response = super(WhatsAppClaimView, self).pre_process(
+            *args, **kwargs)
+
+        code = self.request.GET.get('code')
+        state = self.request.GET.get('state')
+        session_state = self.request.session.get(DEFAULT_STATE_KEY)
+        if all([code, state]) and state == session_state:
+            self.set_session_authorization(
+                self.get_authorization(code))
+            del self.request.session[DEFAULT_STATE_KEY]
+            return redirect(
+                reverse('channels.claim_%s' % (
+                    self.channel_type.slug,)))
+
+        return response
+
+    def set_session_authorization(self, authorization):
+        self.request.session[DEFAULT_AUTHORIZATION_KEY] = authorization
+
+    def get_session_authorization(self):
+        return self.request.session.get(DEFAULT_AUTHORIZATION_KEY)
+
+    def clear_session_authorization(self):
+        del self.request.session[DEFAULT_AUTHORIZATION_KEY]
+
+    def get_authorization(self, code):
+        wassup_url = getattr(
+            settings, 'WASSUP_AUTH_URL', DEFAULT_AUTH_URL)
+        client_id = getattr(
+            settings, 'WASSUP_AUTH_CLIENT_ID', None)
+        client_secret = getattr(
+            settings, 'WASSUP_AUTH_CLIENT_SECRET', None)
+
+        redirect_uri = self.get_redirect_uri()
+
+        response = requests.post(
+            '%s/oauth/token/' % (wassup_url,), {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": redirect_uri,
+                "client_id": client_id,
+                "client_secret": client_secret,
+            })
+        response.raise_for_status()
+        return response.json()
+
+    def get_redirect_uri(self):
+        return self.request.build_absolute_uri(
+            reverse('channels.claim_%s' % (self.channel_type.slug,)))
+
+    def get_context_data(self, **kwargs):
+        context = super(WhatsAppClaimView, self).get_context_data(
+            **kwargs)
+
+        wassup_url = getattr(
+            settings, 'WASSUP_AUTH_URL', DEFAULT_AUTH_URL)
+        client_id = getattr(
+            settings, 'WASSUP_AUTH_CLIENT_ID', None)
+        auth_scopes = getattr(
+            settings, 'WASSUP_AUTH_SCOPES', DEFAULT_SCOPES
+        )
+
+        auth_state = uuid4().hex[:8]
+        self.request.session[DEFAULT_STATE_KEY] = auth_state
+
+        auth_url = '%s/oauth/authorize/?%s' % (
+            wassup_url,
+            urllib.urlencode({
+                "client_id": client_id,
+                "redirect_uri": self.get_redirect_uri(),
+                "scopes": auth_scopes,
+                "response_type": "code",
+                "state": auth_state,
+            }))
+
+        context['whatsapp_auth_url'] = auth_url
+
+        # if we've not authorized yet, remove the form
+        if not self.get_session_authorization():
+            context['show_form'] = False
+        else:
+            context['show_form'] = True
+        return context
 
     def wassup_url(self):
         return getattr(
-            settings, 'WASSUP_API_URL', 'https://wassup.p16n.org/api/v1')
+            settings, 'WASSUP_API_URL', '%s/api/v1' % (DEFAULT_AUTH_URL,))
 
     def get_numbers(self, api_token):
         response = requests.get(
             '%s/numbers/' % (self.wassup_url(),),
             headers={
-                'Authorization': 'Token %s' % (api_token),
+                'Authorization': 'Bearer %s' % (api_token),
                 'Accept': 'application/json',
             })
         response.raise_for_status()
@@ -87,7 +152,7 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
         response = requests.get(
             '%s/groups/' % (self.wassup_url(),),
             headers={
-                'Authorization': 'Token %s' % (api_token),
+                'Authorization': 'Bearer %s' % (api_token),
                 'Accept': 'application/json',
             })
         response.raise_for_status()
@@ -98,84 +163,72 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
         return [(group['uuid'], '%(subject)s for %(number)s' % group)
                 for group in self.get_groups(api_token)]
 
-    def get_form_class(self):
-        if 'api_token' in self.request.POST and self.request.method == 'POST':
-            form_kwargs = self.get_form_kwargs()
-            form = TokenForm(**form_kwargs)
-            if form.is_valid():
-                api_token = form.cleaned_data['api_token']
-                form_kwargs = self.get_form_kwargs()
-                form_kwargs.setdefault('initial', {}).update({
-                    'api_token': api_token,
-                })
-                return self.claim_form_class
-
-        return TokenForm
-
-    def get_form_kwargs(self):
-        kwargs = super(WhatsAppClaimView, self).get_form_kwargs()
-        if 'api_token' in self.request.POST:
-            kwargs.update({
-                'initial': {
-                    'api_token': self.request.POST['api_token'],
-                }
-            })
-        return kwargs
-
 
 class DirectClaimView(WhatsAppClaimView):
 
-    claim_form_class = NumberForm
+    def get_form_class(self, *args, **kwargs):
+        return NumberForm
 
     # NOTE: this is a SmartMin callback
     def customize_form_field(self, name, field):
-        if name == 'number':
-            api_token = self.request.POST['api_token']
-            field.choices = self.get_number_choices(api_token)
+        authorization = self.request.session.get(DEFAULT_AUTHORIZATION_KEY)
+        if authorization and name == 'number':
+            field.choices = self.get_number_choices(
+                authorization['access_token'])
         return field
 
     def form_valid(self, form):
         org = self.request.user.get_org()
-        api_token = form.cleaned_data['api_token']
         number = form.cleaned_data['number']
+        authorization = self.get_session_authorization()
 
         config = {
-            'api_token': api_token,
+            'authorization': authorization,
+            'expires_at': (
+                datetime.now() + timedelta(
+                    seconds=authorization['expires_in'])).isoformat(),
             'number': number,
         }
 
         self.object = Channel.create(
             org, self.request.user, None, self.channel_type,
-            name='direct messages to %s' % (number,),
+            name='Direct Messages to %s' % (number,),
             address=number, config=config,
             secret=Channel.generate_secret())
 
-        return super(DirectClaimView, self).form_valid(form)
+        self.clear_session_authorization
+        return super(WhatsAppClaimView, self).form_valid(form)
 
 
 class GroupClaimView(WhatsAppClaimView):
 
-    claim_form_class = GroupForm
+    def get_form_class(self, *args, **kwargs):
+        return GroupForm
 
     # NOTE: this is a SmartMin callback
     def customize_form_field(self, name, field):
-        if name == 'group':
-            api_token = self.request.POST['api_token']
-            field.choices = self.get_group_choices(api_token)
+        authorization = self.request.session.get(DEFAULT_AUTHORIZATION_KEY)
+        if authorization and name == 'group':
+            field.choices = self.get_group_choices(
+                authorization['access_token'])
         return field
 
     def form_valid(self, form):
         org = self.request.user.get_org()
-        api_token = form.cleaned_data['api_token']
-        group_uuid = form.cleaned_data['group']
+        authorization = self.get_session_authorization()
+        access_token = authorization['access_token']
 
+        group_uuid = form.cleaned_data['group']
         [group] = [group
-                   for group in self.get_groups(api_token)
+                   for group in self.get_groups(access_token)
                    if group['uuid'] == group_uuid]
 
         config = {
-            'api_token': api_token,
-            'group_uuid': group_uuid,
+            'authorization': authorization,
+            'expires_at': (
+                (datetime.now() + timedelta(
+                    seconds=authorization['expires_in']))).isoformat(),
+            'group': group,
         }
 
         self.object = Channel.create(
@@ -184,4 +237,5 @@ class GroupClaimView(WhatsAppClaimView):
             address=group['number'], config=config,
             secret=Channel.generate_secret())
 
-        return super(GroupClaimView, self).form_valid(form)
+        self.clear_session_authorization()
+        return super(WhatsAppClaimView, self).form_valid(form)

@@ -1,0 +1,58 @@
+-extends "channels/types/whatsapp_base.html"
+  -load i18n compress temba
+
+  -block title
+    .medium-help.float-left{class:"{{ view.channel_type.icon }}"}
+
+    %h2.font_normalize.header-margin
+      {{ title }}
+
+  -block pre-form
+    -if show_form
+      .info
+        %p
+          -blocktrans with name=brand.name
+            Please select the number you want to connect below.
+    - else
+      .info
+        %p
+          -blocktrans with name=brand.name
+            After connecting your account, any incoming direct messages for the number you select will automatically
+            be read by {{ name }}, you'll also be able to send direct messages to contacts you know using their phone number.
+
+        .important
+          %p
+            -blocktrans
+              Note that you can also send and receive MP3 audio files and JPG images. Location pins are supported but
+              can only be received. Sending of videos is not supported.
+
+        %a.btn.btn-primary{href:"{{ whatsapp_auth_url }}", style:"margin-right: 5px"}
+          -trans "Authorize"
+
+        %a.btn{href:"{% url 'channels.channel_claim' %}"}
+          -trans "Cancel"
+
+  -block extra-style
+    {{ block.super }}
+
+    :css
+      .info {
+        width: 800px;
+        margin-bottom: 20px;
+      }
+
+      .important {
+        background-color: #efefef;
+        border: 1px solid #ccc;
+        padding: 10px 10px 0px 10px;
+        margin-bottom: 10px;
+      }
+
+      .medium-help {
+        font-size: 50px;
+        height: 50px;
+      }
+
+      .header-margin {
+        margin-left: 60px;
+      }
