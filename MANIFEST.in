@@ -3,6 +3,8 @@ include README.rst
 include requirements.txt
 include requirements-dev.txt
 include VERSION
+recursive-include * *.html
+recursive-include * *.haml
 
 recursive-include tests *
 recursive-exclude * __pycache__
