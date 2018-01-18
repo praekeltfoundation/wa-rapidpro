@@ -37,6 +37,11 @@ class WhatsAppType(ChannelType):
             settings, 'WASSUP_API_URL', 'https://wassup.p16n.org/api/v1')
 
     def add_channel_webhook(self, channel, event):
+        headers = self.api_request_headers(channel)
+        headers.update({
+            'Content-Type': 'application/json',
+        })
+
         response = requests.post(
             '%s/webhooks/' % (self.wassup_url(),),
             json={
@@ -45,23 +50,17 @@ class WhatsAppType(ChannelType):
                 'number': channel.address,
                 'secret': channel.secret,
             },
-            headers={
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': 'Token %s' % (
-                    channel.config_json()['api_token'],),
-            })
+            headers=headers)
         response.raise_for_status()
         data = response.json()
         return data['id']
 
     def remove_channel_webhook(self, channel, webhook_id):
+        headers = self.api_request_headers(channel)
+
         response = requests.delete(
             '%s/webhooks/%s/' % (self.wassup_url(), webhook_id,),
-            headers={
-                'Authorization': 'Token %s' % (
-                    channel.config_json()['api_token'],),
-            })
+            headers=headers)
         response.raise_for_status()
 
     def remove_channel_webhooks(self, channel):
@@ -97,14 +96,35 @@ class WhatsAppType(ChannelType):
                 attachment.content_type),
         }
 
-    def send_whatsapp(self, channel_struct, msg, payload, attachments=None):
-        url = ('%s/messages/' % (self.wassup_url(),))
+    def api_request_headers(self, channelish):
+        if(isinstance(channelish, Channel)):
+            config = channelish.config_json()
+        else:
+            config = channelish.config
+
         headers = TEMBA_HEADERS.copy()
         headers.update({
             'Accept': 'application/json',
-            'Authorization': 'Token %s' % (
-                channel_struct.config['api_token'],),
         })
+
+        if 'api_token' in config:
+            headers.update({
+                'Authorization': 'Token %s' % (
+                    config['api_token'],),
+            })
+        else:
+            authorization = config['authorization']
+            headers.update({
+                'Authorization': '%s %s' % (
+                    authorization['token_type'],
+                    authorization['access_token'],
+                )
+            })
+        return headers
+
+    def send_whatsapp(self, channel_struct, msg, payload, attachments=None):
+        url = ('%s/messages/' % (self.wassup_url(),))
+        headers = self.api_request_headers(channel_struct)
         event = HttpEvent('POST', url, json.dumps(payload))
         start = time.time()
 
@@ -152,6 +172,7 @@ class WhatsAppDirectType(WhatsAppType):
 
     claim_blurb = 'Claim your direct WhatsApp Channel'
     claim_view = DirectClaimView
+    show_config_page = False
     code = 'WAD'
     slug = 'wad'
     name = 'WhatsApp Direct'
@@ -201,6 +222,7 @@ class WhatsAppGroupType(WhatsAppType):
 
     claim_blurb = 'Claim your WhatsApp Group Channel'
     claim_view = GroupClaimView
+    show_config_page = False
     code = 'WAG'
     slug = 'wag'
     name = 'WhatsApp Group'
