@@ -1,5 +1,7 @@
 import requests
 import urllib
+import logging
+
 from datetime import datetime, timedelta
 from uuid import uuid4
 from django import forms
@@ -24,6 +26,8 @@ DEFAULT_SCOPES = " ".join([
     "websocket:read",
     "profile:read",
 ])
+
+logger = logging.getLogger(__name__)
 
 
 class NumberForm(ClaimViewMixin.Form):
@@ -121,10 +125,12 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
         context['whatsapp_auth_url'] = auth_url
 
         # if we've not authorized yet, remove the form
-        if not self.get_session_authorization():
-            context['show_form'] = False
-        else:
+        authorization = self.get_session_authorization()
+        if authorization is not None:
+            logger.info("Got authorization: %r" % (authorization,))
             context['show_form'] = True
+        else:
+            context['show_form'] = False
         return context
 
     def wassup_url(self):
