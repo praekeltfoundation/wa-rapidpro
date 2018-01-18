@@ -126,8 +126,8 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
 
         # if we've not authorized yet, remove the form
         authorization = self.get_session_authorization()
+        logger.warn("Got authorization: %r" % (authorization,))
         if authorization is not None:
-            logger.info("Got authorization: %r" % (authorization,))
             context['show_form'] = True
         else:
             context['show_form'] = False
