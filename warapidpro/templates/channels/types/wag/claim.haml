@@ -8,11 +8,12 @@
       {{ title }}
 
   -block pre-form
-
-    %p
-      -> {{authorization}} <-
-
-    -if not show_form
+    -if show_form
+      .info
+        %p
+          -blocktrans with name=brand.name
+            Please select the group you want to connect below.
+    - else
       .info
         %p
           -blocktrans with name=brand.name
@@ -30,11 +31,6 @@
 
         %a.btn{href:"{% url 'channels.channel_claim' %}"}
           -trans "Cancel"
-    - else
-      .info
-        %p
-          -blocktrans with name=brand.name
-            Please select the group you want to connect below.
 
   -block extra-style
     {{ block.super }}
