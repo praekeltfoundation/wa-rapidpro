@@ -12,6 +12,37 @@ from warapidpro.types import WhatsAppDirectType, WhatsAppGroupType
 from temba.utils import dict_to_struct
 
 
+class WhatsAppTypeTest(TembaTest):
+
+
+    def test_api_request_headers(self):
+        old_style_channel = Channel.create(
+            self.org, self.user, 'RW', WhatsAppDirectType.code,
+            None, '+27000000000',
+            config=dict(api_token='api-token', secret='secret'),
+            uuid='00000000-0000-0000-0000-000000001234',
+            role=Channel.DEFAULT_ROLE)
+        new_style_channel = Channel.create(
+            self.org, self.user, 'RW', WhatsAppDirectType.code,
+            None, '+27000000000',
+            config={
+                'authorization': {
+                    'token_type': 'Bearer',
+                    'access_token': 'foo',
+                }
+            },
+            uuid='00000000-0000-0000-0000-000000005678',
+            role=Channel.DEFAULT_ROLE)
+
+        t = WhatsAppDirectType()
+        self.assertEqual(
+            t.api_request_headers(old_style_channel)['Authorization'],
+            'Token api-token')
+        self.assertEqual(
+            t.api_request_headers(new_style_channel)['Authorization'],
+            'Bearer foo')
+
+
 class WhatsAppDirectTypeTest(TembaTest):
     """
     NOTE: Run these tests from the RapidPro repository / virtualenv
