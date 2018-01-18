@@ -14,7 +14,6 @@ from temba.utils import dict_to_struct
 
 class WhatsAppTypeTest(TembaTest):
 
-
     def test_api_request_headers(self):
         old_style_channel = Channel.create(
             self.org, self.user, 'RW', WhatsAppDirectType.code,
