@@ -67,7 +67,8 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
         self.request.session[DEFAULT_AUTHORIZATION_KEY] = authorization
 
     def get_session_authorization(self):
-        return self.request.session.get(DEFAULT_AUTHORIZATION_KEY)
+        return self.request.session.get(
+            DEFAULT_AUTHORIZATION_KEY, {})
 
     def clear_session_authorization(self):
         del self.request.session[DEFAULT_AUTHORIZATION_KEY]
@@ -126,8 +127,7 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
 
         # if we've not authorized yet, remove the form
         authorization = self.get_session_authorization()
-        logger.warn("Got authorization: %r" % (authorization,))
-        if authorization is not None:
+        if authorization.get('access_token') is not None:
             context['show_form'] = True
         else:
             context['show_form'] = False
