@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from smartmin.views import SmartFormView, SmartTemplateView
+from smartmin.views import SmartFormView
 
 from temba.channels.views import ClaimViewMixin
 from temba.channels.models import Channel
