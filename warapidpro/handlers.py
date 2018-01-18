@@ -1,5 +1,6 @@
 import json
 import logging
+import requests
 
 from temba.channels.handlers import BaseChannelHandler
 from temba.channels.models import Channel, ChannelLog
@@ -7,7 +8,14 @@ from temba.contacts.models import URN
 from temba.msgs.models import Msg, OUTGOING
 from temba.utils.http import HttpEvent
 
+from smartmin.views import SmartFormView
+
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
+from warapidpro.views import (
+    DEFAULT_AUTHORIZATION_KEY,
+    DEFAULT_AUTH_URL,
+    NumberForm)
 
 logger = logging.getLogger(__name__)
 
