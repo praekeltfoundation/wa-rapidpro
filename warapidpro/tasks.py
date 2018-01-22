@@ -63,6 +63,6 @@ def refresh_channel_auth_tokens(delta=timedelta(minutes=5)):
         if 'expires_at' not in config:
             continue
         expires_at = parser.parse(config['expires_at'])
-        marker = datetime.now() - delta
-        if marker < expires_at:
+        marker = datetime.now() + delta
+        if marker > expires_at:
             refresh_channel_auth_token.delay(channel.pk)
