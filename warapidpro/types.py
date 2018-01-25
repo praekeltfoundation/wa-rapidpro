@@ -18,6 +18,14 @@ from .views import DirectClaimView, GroupClaimView
 
 logger = logging.getLogger(__name__)
 
+WHATSAPP_DIRECT_CHANNEL_TYPE = 'WAD'
+WHATSAPP_GROUP_CHANNEL_TYPE = 'WAG'
+
+WHATSAPP_CHANNEL_TYPES = set([
+    WHATSAPP_DIRECT_CHANNEL_TYPE,
+    WHATSAPP_GROUP_CHANNEL_TYPE,
+])
+
 
 class WhatsAppType(ChannelType):
     category = ChannelType.Category.SOCIAL_MEDIA
@@ -173,7 +181,7 @@ class WhatsAppDirectType(WhatsAppType):
     claim_blurb = 'Claim your direct WhatsApp Channel'
     claim_view = DirectClaimView
     show_config_page = False
-    code = 'WAD'
+    code = WHATSAPP_DIRECT_CHANNEL_TYPE
     slug = 'wad'
     name = 'WhatsApp Direct'
 
@@ -223,7 +231,7 @@ class WhatsAppGroupType(WhatsAppType):
     claim_blurb = 'Claim your WhatsApp Group Channel'
     claim_view = GroupClaimView
     show_config_page = False
-    code = 'WAG'
+    code = WHATSAPP_GROUP_CHANNEL_TYPE
     slug = 'wag'
     name = 'WhatsApp Group'
 
