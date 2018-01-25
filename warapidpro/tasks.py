@@ -171,24 +171,28 @@ def check_contact_whatsappable(contact_pk, channel_pk):
     wassup_url = getattr(
         settings, 'WASSUP_AUTH_URL', DEFAULT_AUTH_URL)
 
-    response = session.get(
-        '%s/api/v1/numbers/check/?%s' % (
-            wassup_url,
-            urllib.urlencode({
-                "number": channel.address,
-                "address": urn.path,
-                "wait": "true",
-            }),),
-        headers={
-            'Authorization': '%s %s' % (
-                authorization.get('token_type', 'Token'), token,),
-            'User-Agent': 'warapidpro/%s (%s, %s)' % (
-                distribution.version, org.name, settings.HOSTNAME)
-        })
+    if urn:
+        response = session.get(
+            '%s/api/v1/numbers/check/?%s' % (
+                wassup_url,
+                urllib.urlencode({
+                    "number": channel.address,
+                    "address": urn.path,
+                    "wait": "true",
+                }),),
+            headers={
+                'Authorization': '%s %s' % (
+                    authorization.get('token_type', 'Token'), token,),
+                'User-Agent': 'warapidpro/%s (%s, %s)' % (
+                    distribution.version, org.name, settings.HOSTNAME)
+            })
 
-    response.raise_for_status()
-    payload = response.json().get(channel.address)
-    has_whatsapp_value = YES if payload.get('exists') is True else NO
+        response.raise_for_status()
+        payload = response.json().get(channel.address)
+        has_whatsapp_value = YES if payload.get('exists') is True else NO
+    else:
+        has_whatsapp_value = NO
+
     contact.set_field(
         user=org.administrators.first(),
         key=has_whatsapp.key, value=has_whatsapp_value)
