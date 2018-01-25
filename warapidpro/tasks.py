@@ -1,6 +1,7 @@
 import requests
 import json
 import urllib
+import pkg_resources
 from datetime import datetime, timedelta
 from temba import celery_app
 from dateutil import parser
@@ -10,6 +11,10 @@ from django.db.models import Q
 from warapidpro.types import (
     WhatsAppDirectType, WhatsAppGroupType, WHATSAPP_CHANNEL_TYPES)
 from warapidpro.views import DEFAULT_AUTH_URL
+
+
+session = requests.Session()
+distribution = pkg_resources.get_distribution('warapidpro')
 
 
 @celery_app.task
@@ -27,7 +32,7 @@ def refresh_channel_auth_token(channel_pk):
     client_secret = getattr(
         settings, 'WASSUP_AUTH_CLIENT_SECRET', None)
 
-    response = requests.post(
+    response = session.post(
         '%s/oauth/token/' % (wassup_url,),
         {
             "grant_type": "refresh_token",
@@ -163,17 +168,23 @@ def check_contact_whatsappable(contact_pk, channel_pk):
     authorization = config.get('authorization', {})
     token = authorization.get('access_token') or config.get('api_token')
 
-    response = requests.get(
-        'https://wassup.p16n.org/api/v1/numbers/check/?%s' % (
+    wassup_url = getattr(
+        settings, 'WASSUP_AUTH_URL', DEFAULT_AUTH_URL)
+
+    response = session.get(
+        '%s/api/v1/numbers/check/?%s' % (
+            wassup_url,
             urllib.urlencode({
                 "number": channel.address,
                 "address": urn.path,
                 "wait": "true",
             }),),
-        headers={'Authorization': '%s %s' % (
-            authorization.get('token_type', 'Token'),
-            token,
-        )})
+        headers={
+            'Authorization': '%s %s' % (
+                authorization.get('token_type', 'Token'), token,),
+            'User-Agent': 'warapidpro/%s (%s, %s)' % (
+                distribution.version, org.name, settings.HOSTNAME)
+        })
 
     response.raise_for_status()
     payload = response.json().get(channel.address)
