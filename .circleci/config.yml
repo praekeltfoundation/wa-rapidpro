@@ -3,7 +3,7 @@ jobs:
     build:
         working_directory: /rapidpro/warapidpro
         docker:
-            -   image: praekeltfoundation/rapidpro:v3
+            -   image: praekeltfoundation/rapidpro:v3.0.136p18
                 environment:
                     PIP_EXTRA_INDEX_URL: https://jessie.wheelhouse.praekelt.org/simple/
                     DATABASE_URL: postgis://rapidpro:rapidpro@localhost/rapidpro
