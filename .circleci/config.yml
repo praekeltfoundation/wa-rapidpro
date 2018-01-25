@@ -24,6 +24,7 @@ jobs:
                     command: |
                         # Give mdillon/postgis some time to get its act together
                         sleep 20
+                        /venv/bin/pip install -e /rapidpro/warapidpro/
                         /venv/bin/python /rapidpro/manage.py test warapidpro -v2
             -   run:
                     name: "Auto deploy"
