@@ -126,7 +126,8 @@ def refresh_org_whatsappable(org, sample_size=100, delta=timedelta(days=7)):
 @celery_app.task
 def check_contact_whatsappable(contact_pk, channel_pk):
     from warapidpro.models import (
-        has_whatsapp_contactfield, has_whatsapp_timestamp_contactfield)
+        has_whatsapp_contactfield, has_whatsapp_timestamp_contactfield,
+        get_whatsappable_group, YES, NO)
     from temba.contacts.models import Contact, TEL_SCHEME
     from temba.channels.models import Channel
 
@@ -137,6 +138,9 @@ def check_contact_whatsappable(contact_pk, channel_pk):
 
     has_whatsapp = has_whatsapp_contactfield(org)
     has_whatsapp_timestamp = has_whatsapp_timestamp_contactfield(org)
+
+    # Make sure the group exists
+    get_whatsappable_group(org)
 
     config = channel.config_json()
     authorization = config.get('authorization', {})
@@ -156,7 +160,7 @@ def check_contact_whatsappable(contact_pk, channel_pk):
 
     response.raise_for_status()
     payload = response.json().get(channel.address)
-    has_whatsapp_value = 'yes' if payload.get('exists') is True else 'no'
+    has_whatsapp_value = YES if payload.get('exists') is True else NO
     contact.set_field(
         user=org.administrators.first(),
         key=has_whatsapp.key, value=has_whatsapp_value)

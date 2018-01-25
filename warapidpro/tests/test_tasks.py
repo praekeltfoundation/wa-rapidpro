@@ -12,7 +12,8 @@ from temba.channels.models import Channel
 from warapidpro.types import WhatsAppDirectType
 from warapidpro.models import (
     has_whatsapp_contactfield,
-    has_whatsapp_timestamp_contactfield)
+    has_whatsapp_timestamp_contactfield,
+    get_whatsappable_group)
 from warapidpro.tasks import (
     refresh_channel_auth_token,
     refresh_channel_auth_tokens,
@@ -156,6 +157,9 @@ class ContactRefreshTaskTestCase(TembaTest):
             contact_field__key='has_whatsapp_timestamp')
         self.assertTrue(has_whatsapp_timestamp.datetime_value > one_minute_ago)
 
+        group = get_whatsappable_group(joe.org)
+        self.assertEqual(set(group.contacts.all()), set([joe]))
+
     @responses.activate
     def test_check_contact_whatsappable_new_channel_config(self):
 
@@ -185,6 +189,9 @@ class ContactRefreshTaskTestCase(TembaTest):
             contact_field__key='has_whatsapp_timestamp')
         self.assertTrue(has_whatsapp_timestamp.datetime_value > one_minute_ago)
 
+        group = get_whatsappable_group(joe.org)
+        self.assertEqual(set(group.contacts.all()), set([joe]))
+
     @responses.activate
     def test_check_contact_not_whatsappable(self):
 
@@ -213,6 +220,8 @@ class ContactRefreshTaskTestCase(TembaTest):
         has_whatsapp_timestamp = joe.values.get(
             contact_field__key='has_whatsapp_timestamp')
         self.assertTrue(has_whatsapp_timestamp.datetime_value > one_minute_ago)
+        group = get_whatsappable_group(joe.org)
+        self.assertEqual(set(group.contacts.all()), set([]))
 
     @responses.activate
     @patch.object(check_contact_whatsappable, 'delay')
