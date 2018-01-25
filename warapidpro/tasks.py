@@ -72,10 +72,24 @@ def refresh_channel_auth_tokens(delta=timedelta(minutes=5)):
 
 
 @celery_app.task
-def check_org_whatsappable(org, sample_size=100):
+def update_whatsappable_contacts(sample_size=100):
+    from temba.orgs.models import Org
+
+    orgs_with_whatsapp = Org.objects.filter(
+        channels__channel_type__in=WHATSAPP_CHANNEL_TYPES).distinct('id')
+    for org in orgs_with_whatsapp:
+        check_org_whatsappable.delay(org.pk, sample_size=sample_size)
+        refresh_org_whatsappable.delay(org.pk, sample_size=sample_size)
+
+
+@celery_app.task
+def check_org_whatsappable(org_pk, sample_size=100):
     from warapidpro.models import (
         has_whatsapp_contactfield, has_whatsapp_timestamp_contactfield)
     from temba.contacts.models import Contact
+    from temba.orgs.models import Org
+
+    org = Org.objects.get(pk=org_pk)
 
     channels = org.channels.filter(
         channel_type__in=WHATSAPP_CHANNEL_TYPES, is_active=True)
@@ -97,10 +111,13 @@ def check_org_whatsappable(org, sample_size=100):
 
 
 @celery_app.task
-def refresh_org_whatsappable(org, sample_size=100, delta=timedelta(days=7)):
+def refresh_org_whatsappable(org_pk, sample_size=100, delta=timedelta(days=7)):
     from warapidpro.models import (
         has_whatsapp_contactfield, has_whatsapp_timestamp_contactfield)
     from temba.contacts.models import Contact
+    from temba.orgs.models import Org
+
+    org = Org.objects.get(pk=org_pk)
 
     channels = org.channels.filter(
         channel_type__in=WHATSAPP_CHANNEL_TYPES, is_active=True)

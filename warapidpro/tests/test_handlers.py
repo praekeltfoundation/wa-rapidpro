@@ -61,9 +61,9 @@ class DirectHandlerTest(TembaTest):
             }), content_type='application/json')
 
             response = self.handler.dispatch(request, uuid=self.channel.uuid)
-            self.assertEquals(201, response.status_code)
+            self.assertEqual(201, response.status_code)
             sms = Msg.objects.get(pk=sms.id)
-            self.assertEquals(assert_status, sms.status)
+            self.assertEqual(assert_status, sms.status)
 
         assertStatus(msg, 'delivered', DELIVERED)
         assertStatus(msg, 'failed', FAILED)
@@ -144,9 +144,9 @@ class GroupHandlerTest(TembaTest):
             }), content_type='application/json')
 
             response = self.handler.dispatch(request, uuid=self.channel.uuid)
-            self.assertEquals(201, response.status_code)
+            self.assertEqual(201, response.status_code)
             sms = Msg.objects.get(pk=sms.id)
-            self.assertEquals(assert_status, sms.status)
+            self.assertEqual(assert_status, sms.status)
 
         assertStatus(msg, 'delivered', DELIVERED)
         assertStatus(msg, 'failed', FAILED)

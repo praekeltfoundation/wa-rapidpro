@@ -65,8 +65,8 @@ class TaskTestCase(TembaTest):
 
         def cb(request):
             data = urlparse.parse_qs(request.body)
-            self.assertEquals(data['grant_type'], ['refresh_token'])
-            self.assertEquals(data['refresh_token'], ['b'])
+            self.assertEqual(data['grant_type'], ['refresh_token'])
+            self.assertEqual(data['refresh_token'], ['b'])
             return (200, {}, json.dumps({
                 'access_token': 'foo',
                 'refresh_token': 'bar',
@@ -227,7 +227,7 @@ class ContactRefreshTaskTestCase(TembaTest):
     @patch.object(check_contact_whatsappable, 'delay')
     def test_check_org_whatsappable(self, mock_check):
         joe = self.create_contact("Joe Biden", "+254788383383")
-        check_org_whatsappable(joe.org)
+        check_org_whatsappable(joe.org.pk)
         mock_check.assert_called_with(joe.pk, self.new_style_channel.pk)
 
     @responses.activate
@@ -243,5 +243,5 @@ class ContactRefreshTaskTestCase(TembaTest):
         joe.set_field(
             self.admin, key=has_whatsapp_timestamp.key,
             value=(timezone.now() - timedelta(days=7)))
-        refresh_org_whatsappable(joe.org, delta=timedelta(days=6))
+        refresh_org_whatsappable(joe.org.pk, delta=timedelta(days=6))
         mock_check.assert_called_with(joe.pk, self.new_style_channel.pk)
