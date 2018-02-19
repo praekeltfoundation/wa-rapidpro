@@ -106,12 +106,35 @@ def check_org_whatsappable(org_pk, sample_size=100):
     has_whatsapp = has_whatsapp_contactfield(org)
     has_whatsapp_timestamp = has_whatsapp_timestamp_contactfield(org)
 
-    all_contacts = Contact.objects.filter(org=org)
-    new_contacts = all_contacts.exclude(
-        Q(values__contact_field=has_whatsapp) |
-        Q(values__contact_field=has_whatsapp_timestamp))
+    # Django's ORM only way of modelling this query is by using
+    # .exclude() which introduces a massive subquery which is extremely
+    # inefficient.
+    new_contacts = Contact.objects.raw("""
+        SELECT "contacts_contact"."id",
+                "contacts_contact"."is_active",
+                "contacts_contact"."created_by_id",
+                "contacts_contact"."created_on",
+                "contacts_contact"."modified_by_id",
+                "contacts_contact"."modified_on",
+                "contacts_contact"."uuid",
+                "contacts_contact"."name",
+                "contacts_contact"."org_id",
+                "contacts_contact"."is_blocked",
+                "contacts_contact"."is_test",
+                "contacts_contact"."is_stopped",
+                "contacts_contact"."language"
+        FROM "contacts_contact"
+        LEFT JOIN "values_value"
+            ON "contacts_contact"."id" = "values_value"."contact_id"
+        WHERE "contacts_contact"."org_id" = %s
+        AND (("values_value"."contact_field_id" != %s
+                AND "values_value"."contact_field_id" != %s)
+                OR "values_value"."contact_field_id" IS NULL)
+        ORDER BY RANDOM() ASC
+        LIMIT %s
+        """, [org.pk, has_whatsapp.pk, has_whatsapp_timestamp.pk, sample_size])
 
-    for contact in new_contacts.order_by('?')[:sample_size]:
+    for contact in new_contacts:
         check_contact_whatsappable.delay(contact.pk, channel.pk)
 
 
