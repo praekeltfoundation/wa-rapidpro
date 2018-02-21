@@ -193,6 +193,7 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         headers={
             'Authorization': '%s %s' % (
                 authorization.get('token_type', 'Token'), token,),
+            'Content-Type': 'application/json',
             'User-Agent': 'warapidpro/%s (%s, %s)' % (
                 distribution.version, channel.org.name, settings.HOSTNAME)
         })
