@@ -1,6 +1,5 @@
 import requests
 import json
-import urllib
 import pkg_resources
 from datetime import datetime, timedelta
 from temba import celery_app
@@ -110,19 +109,7 @@ def check_org_whatsappable(org_pk, sample_size=100):
     # .exclude() which introduces a massive subquery which is extremely
     # inefficient.
     new_contacts = Contact.objects.raw("""
-        SELECT "contacts_contact"."id",
-                "contacts_contact"."is_active",
-                "contacts_contact"."created_by_id",
-                "contacts_contact"."created_on",
-                "contacts_contact"."modified_by_id",
-                "contacts_contact"."modified_on",
-                "contacts_contact"."uuid",
-                "contacts_contact"."name",
-                "contacts_contact"."org_id",
-                "contacts_contact"."is_blocked",
-                "contacts_contact"."is_test",
-                "contacts_contact"."is_stopped",
-                "contacts_contact"."language"
+        SELECT "contacts_contact".*
         FROM "contacts_contact"
         LEFT JOIN "values_value"
             ON "contacts_contact"."id" = "values_value"."contact_id"
@@ -134,8 +121,8 @@ def check_org_whatsappable(org_pk, sample_size=100):
         LIMIT %s
         """, [org.pk, has_whatsapp.pk, has_whatsapp_timestamp.pk, sample_size])
 
-    for contact in new_contacts:
-        check_contact_whatsappable.delay(contact.pk, channel.pk)
+    check_contact_whatsappable.delay(
+        [contact.pk for contact in new_contacts], channel.pk)
 
 
 @celery_app.task
@@ -164,28 +151,30 @@ def refresh_org_whatsappable(org_pk, sample_size=100, delta=timedelta(days=7)):
         values__contact_field=has_whatsapp_timestamp,
         values__datetime_value__lte=timezone.now() - delta)
 
-    for contact in needing_refreshing.order_by('?')[:sample_size]:
-        check_contact_whatsappable.delay(contact.pk, channel.pk)
+    selected_for_refreshing = needing_refreshing.order_by('?')[:sample_size]
+
+    check_contact_whatsappable.delay(
+        [contact.pk for contact in selected_for_refreshing], channel.pk)
 
 
 @celery_app.task
-def check_contact_whatsappable(contact_pk, channel_pk):
+def check_contact_whatsappable(contact_pks, channel_pk):
     from warapidpro.models import (
         has_whatsapp_contactfield, has_whatsapp_timestamp_contactfield,
         get_whatsappable_group, YES, NO)
     from temba.contacts.models import Contact, TEL_SCHEME
     from temba.channels.models import Channel
 
-    contact = Contact.objects.get(pk=contact_pk)
-    org = contact.org
-    urn = contact.get_urn(TEL_SCHEME)
     channel = Channel.objects.get(pk=channel_pk)
-
+    org = channel.org
     has_whatsapp = has_whatsapp_contactfield(org)
     has_whatsapp_timestamp = has_whatsapp_timestamp_contactfield(org)
-
     # Make sure the group exists
     get_whatsappable_group(org)
+
+    contacts = Contact.objects.filter(pk__in=contact_pks)
+    contacts_and_urns = dict([
+        (contact.get_urn(TEL_SCHEME).path, contact) for contact in contacts])
 
     config = channel.config_json()
     authorization = config.get('authorization', {})
@@ -194,31 +183,32 @@ def check_contact_whatsappable(contact_pk, channel_pk):
     wassup_url = getattr(
         settings, 'WASSUP_AUTH_URL', DEFAULT_AUTH_URL)
 
-    if urn:
-        response = session.get(
-            '%s/api/v1/numbers/check/?%s' % (
-                wassup_url,
-                urllib.urlencode({
-                    "number": channel.address,
-                    "address": urn.path,
-                    "wait": "true",
-                }),),
-            headers={
-                'Authorization': '%s %s' % (
-                    authorization.get('token_type', 'Token'), token,),
-                'User-Agent': 'warapidpro/%s (%s, %s)' % (
-                    distribution.version, org.name, settings.HOSTNAME)
-            })
+    response = session.post(
+        '%s/api/v1/lookups/' % (wassup_url,),
+        data=json.dumps({
+            "number": channel.address,
+            "msisdns": [urn for urn in contacts_and_urns],
+            "wait": True,
+        }),
+        headers={
+            'Authorization': '%s %s' % (
+                authorization.get('token_type', 'Token'), token,),
+            'User-Agent': 'warapidpro/%s (%s, %s)' % (
+                distribution.version, channel.org.name, settings.HOSTNAME)
+        })
 
-        response.raise_for_status()
-        payload = response.json().get(channel.address)
-        has_whatsapp_value = YES if payload.get('exists') is True else NO
-    else:
-        has_whatsapp_value = NO
+    response.raise_for_status()
 
-    contact.set_field(
-        user=org.administrators.first(),
-        key=has_whatsapp.key, value=has_whatsapp_value)
-    contact.set_field(
-        user=org.administrators.first(),
-        key=has_whatsapp_timestamp.key, value=timezone.now())
+    for record in response.json():
+        msisdn = record['msisdn']
+        wa_exists = record['wa_exists']
+
+        contact = contacts_and_urns.get(msisdn)
+        has_whatsapp_value = YES if wa_exists is True else NO
+
+        contact.set_field(
+            user=org.administrators.first(),
+            key=has_whatsapp.key, value=has_whatsapp_value)
+        contact.set_field(
+            user=org.administrators.first(),
+            key=has_whatsapp_timestamp.key, value=timezone.now())
