@@ -133,21 +133,27 @@ class ContactRefreshTaskTestCase(TembaTest):
         def cb(request):
             self.assertEqual(
                 request.headers['Authorization'], 'Token api-token')
-            return (200, {}, json.dumps({
-                self.old_style_channel.address: {
-                    "exists": True
+            data = json.loads(request.body)
+            self.assertEqual(data, {
+                'msisdns': ['+254788383383'],
+                'number': '+27000000000',
+                'wait': True
+            })
+            return (200, {}, json.dumps([
+                {
+                    "msisdn": "+254788383383",
+                    "wa_exists": True,
                 }
-            }))
+            ]))
 
         responses.add_callback(
-            responses.GET,
-            ("https://wassup.p16n.org/api/v1/numbers/check/"
-             "?wait=true&number=%2B27000000000&address=%2B254788383383"),
+            responses.POST,
+            "https://wassup.p16n.org/api/v1/lookups/",
             callback=cb, content_type='application/json',
             match_querystring=True)
 
         joe = self.create_contact("Joe Biden", "+254788383383")
-        check_contact_whatsappable(joe.pk, self.old_style_channel.pk)
+        check_contact_whatsappable([joe.pk], self.old_style_channel.pk)
 
         has_whatsapp = joe.values.get(contact_field__key='has_whatsapp')
         self.assertEqual(has_whatsapp.string_value, 'yes')
@@ -164,22 +170,29 @@ class ContactRefreshTaskTestCase(TembaTest):
     def test_check_contact_whatsappable_new_channel_config(self):
 
         def cb(request):
-            self.assertEqual(request.headers['Authorization'], 'Bearer foo')
-            return (200, {}, json.dumps({
-                self.new_style_channel.address: {
-                    "exists": True
+            self.assertEqual(
+                request.headers['Authorization'], 'Bearer foo')
+            data = json.loads(request.body)
+            self.assertEqual(data, {
+                'msisdns': ['+254788383383'],
+                'number': '+27000000000',
+                'wait': True
+            })
+            return (200, {}, json.dumps([
+                {
+                    "msisdn": "+254788383383",
+                    "wa_exists": True,
                 }
-            }))
+            ]))
 
         responses.add_callback(
-            responses.GET,
-            ("https://wassup.p16n.org/api/v1/numbers/check/"
-             "?wait=true&number=%2B27000000000&address=%2B254788383383"),
+            responses.POST,
+            "https://wassup.p16n.org/api/v1/lookups/",
             callback=cb, content_type='application/json',
             match_querystring=True)
 
         joe = self.create_contact("Joe Biden", "+254788383383")
-        check_contact_whatsappable(joe.pk, self.new_style_channel.pk)
+        check_contact_whatsappable([joe.pk], self.new_style_channel.pk)
 
         has_whatsapp = joe.values.get(contact_field__key='has_whatsapp')
         self.assertEqual(has_whatsapp.string_value, 'yes')
@@ -197,21 +210,27 @@ class ContactRefreshTaskTestCase(TembaTest):
 
         def cb(request):
             self.assertEqual(request.headers['Authorization'], 'Bearer foo')
-            return (200, {}, json.dumps({
-                self.new_style_channel.address: {
-                    "exists": "something not true"
+            data = json.loads(request.body)
+            self.assertEqual(data, {
+                'msisdns': ['+254788383383'],
+                'number': '+27000000000',
+                'wait': True
+            })
+            return (200, {}, json.dumps([
+                {
+                    "msisdn": "+254788383383",
+                    "wa_exists": False,
                 }
-            }))
+            ]))
 
         responses.add_callback(
-            responses.GET,
-            ("https://wassup.p16n.org/api/v1/numbers/check/"
-             "?wait=true&number=%2B27000000000&address=%2B254788383383"),
+            responses.POST,
+            "https://wassup.p16n.org/api/v1/lookups/",
             callback=cb, content_type='application/json',
             match_querystring=True)
 
         joe = self.create_contact("Joe Biden", "+254788383383")
-        check_contact_whatsappable(joe.pk, self.new_style_channel.pk)
+        check_contact_whatsappable([joe.pk], self.new_style_channel.pk)
 
         has_whatsapp = joe.values.get(contact_field__key='has_whatsapp')
         self.assertEqual(has_whatsapp.string_value, 'no')
@@ -228,7 +247,7 @@ class ContactRefreshTaskTestCase(TembaTest):
     def test_check_org_whatsappable(self, mock_check):
         joe = self.create_contact("Joe Biden", "+254788383383")
         check_org_whatsappable(joe.org.pk)
-        mock_check.assert_called_with(joe.pk, self.new_style_channel.pk)
+        mock_check.assert_called_with([joe.pk], self.new_style_channel.pk)
 
     @responses.activate
     @patch.object(check_contact_whatsappable, 'delay')
@@ -244,4 +263,4 @@ class ContactRefreshTaskTestCase(TembaTest):
             self.admin, key=has_whatsapp_timestamp.key,
             value=(timezone.now() - timedelta(days=7)))
         refresh_org_whatsappable(joe.org.pk, delta=timedelta(days=6))
-        mock_check.assert_called_with(joe.pk, self.new_style_channel.pk)
+        mock_check.assert_called_with([joe.pk], self.new_style_channel.pk)

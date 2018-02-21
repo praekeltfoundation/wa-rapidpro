@@ -1,6 +1,5 @@
 import requests
 import json
-import urllib
 import pkg_resources
 from datetime import datetime, timedelta
 from temba import celery_app
@@ -189,7 +188,7 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         data=json.dumps({
             "number": channel.address,
             "msisdns": [urn for urn in contacts_and_urns],
-            "wait": "true",
+            "wait": True,
         }),
         headers={
             'Authorization': '%s %s' % (
@@ -204,7 +203,7 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         msisdn = record['msisdn']
         wa_exists = record['wa_exists']
 
-        contact = contacts_and_urns(msisdn)
+        contact = contacts_and_urns.get(msisdn)
         has_whatsapp_value = YES if wa_exists is True else NO
 
         contact.set_field(
