@@ -82,8 +82,8 @@ def update_whatsappable_contacts(sample_size=100):
     orgs_with_whatsapp = Org.objects.filter(
         channels__channel_type__in=WHATSAPP_CHANNEL_TYPES).distinct('id')
     for org in orgs_with_whatsapp:
-        check_org_whatsappable.delay(org.pk, sample_size=sample_size)
-        refresh_org_whatsappable.delay(org.pk, sample_size=sample_size)
+        check_org_whatsappable(org.pk, sample_size=sample_size)
+        refresh_org_whatsappable(org.pk, sample_size=sample_size)
 
 
 @celery_app.task
