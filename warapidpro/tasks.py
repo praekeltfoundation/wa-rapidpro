@@ -173,8 +173,12 @@ def check_contact_whatsappable(contact_pks, channel_pk):
     get_whatsappable_group(org)
 
     contacts = Contact.objects.filter(pk__in=contact_pks)
-    contacts_and_urns = dict([
-        (contact.get_urn(TEL_SCHEME).path, contact) for contact in contacts])
+    contacts_and_urns = [
+        (contact.get_urn(TEL_SCHEME), contact) for contact in contacts]
+    contacts_and_msisdns = dict(
+        [(urn.path, contact)
+         for urn, contact in contacts_and_urns
+         if urn.path is not None])
 
     config = channel.config_json()
     authorization = config.get('authorization', {})
@@ -187,7 +191,7 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         '%s/api/v1/lookups/' % (wassup_url,),
         data=json.dumps({
             "number": channel.address,
-            "msisdns": [urn for urn in contacts_and_urns],
+            "msisdns": [urn for urn in contacts_and_msisdns],
             "wait": True,
         }),
         headers={
@@ -204,7 +208,7 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         msisdn = record['msisdn']
         wa_exists = record['wa_exists']
 
-        contact = contacts_and_urns.get(msisdn)
+        contact = contacts_and_msisdns.get(msisdn)
         has_whatsapp_value = YES if wa_exists is True else NO
 
         contact.set_field(
