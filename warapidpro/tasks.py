@@ -178,7 +178,7 @@ def check_contact_whatsappable(contact_pks, channel_pk):
     contacts_and_msisdns = dict(
         [(urn.path, contact)
          for urn, contact in contacts_and_urns
-         if urn.path is not None])
+         if urn is not None])
 
     config = channel.config_json()
     authorization = config.get('authorization', {})
