@@ -49,14 +49,14 @@ jobs:
     release:
         working_directory: ~/app/docker
         docker:
-            -   image: debian:stretch
+            -   image: docker:latest
         steps:
             -   checkout
             -   setup_remote_docker
             -   run:
                     name: Build application Docker image
                     command: |
-                        docker login --username automation --password $AUTOMATION_DOCKER_PASSWORD
+                        docker login --username praekeltorgdeploy --password $PRAEKELTORGDEPLOY_PASSWORD
                         docker build -t praekeltfoundation/engage-rapidpro:latest .
                         docker push praekeltfoundation/engage-rapidpro:latest
 
