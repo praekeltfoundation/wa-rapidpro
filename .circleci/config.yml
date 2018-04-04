@@ -47,7 +47,7 @@ jobs:
                             /venv/bin/twine upload --skip-existing dist/*
                         fi
     release:
-        working_directory: ~/app/docker
+        working_directory: ~/app
         docker:
             -   image: docker:latest
         steps:
@@ -56,6 +56,7 @@ jobs:
             -   run:
                     name: Build application Docker image
                     command: |
+                        cd docker
                         docker login --username praekeltorgdeploy --password $PRAEKELTORGDEPLOY_PASSWORD
                         docker build -t praekeltfoundation/engage-rapidpro:latest .
                         docker push praekeltfoundation/engage-rapidpro:latest
