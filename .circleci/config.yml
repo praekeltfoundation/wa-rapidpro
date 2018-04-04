@@ -58,15 +58,15 @@ jobs:
                     command: |
                         cd docker
                         docker login --username praekeltorgdeploy --password $PRAEKELTORGDEPLOY_PASSWORD
-                        docker build -t praekeltfoundation/engage-rapidpro:latest .
-                        docker push praekeltfoundation/engage-rapidpro:latest
+                        docker build -t praekeltfoundation/rapidpro-engage:latest .
+                        docker push praekeltfoundation/rapidpro-engage:latest
 
                         # If this is a version then tag and push that too.
                         if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"
                         then
                             VERSION=$(git describe)
-                            docker tag praekeltfoundation/engage-rapidpro:latest praekeltfoundation/engage-rapidpro:latest:$VERSION
-                            docker push praekeltfoundation/engage-rapidpro:$VERSION
+                            docker tag praekeltfoundation/rapidpro-engage:latest praekeltfoundation/rapidpro-engage:latest:$VERSION
+                            docker push praekeltfoundation/rapidpro-engage:$VERSION
                         fi
 
 workflows:
