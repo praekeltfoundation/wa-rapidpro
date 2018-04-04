@@ -46,3 +46,38 @@ jobs:
                             /venv/bin/pip install twine
                             /venv/bin/twine upload --skip-existing dist/*
                         fi
+    release:
+        working_directory: ~/app
+        docker:
+            -   image: docker:latest
+        steps:
+            -   checkout
+            -   setup_remote_docker
+            -   run:
+                    name: Build application Docker image
+                    command: |
+                        cd docker
+                        docker login --username praekeltorgdeploy --password $PRAEKELTORGDEPLOY_PASSWORD
+                        docker build -t praekeltfoundation/rapidpro-engage:latest .
+                        docker push praekeltfoundation/rapidpro-engage:latest
+
+                        # If this is a version then tag and push that too.
+                        if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"
+                        then
+                            VERSION=$(git describe)
+                            docker tag praekeltfoundation/rapidpro-engage:latest praekeltfoundation/rapidpro-engage:latest:$VERSION
+                            docker push praekeltfoundation/rapidpro-engage:$VERSION
+                        fi
+
+workflows:
+    version: 2
+    build_and_release:
+        jobs:
+            - build
+            - release:
+                # filters:
+                #     branches:
+                #         only:
+                #             - develop
+                requires:
+                    - build
