@@ -46,3 +46,25 @@ jobs:
                             /venv/bin/pip install twine
                             /venv/bin/twine upload --skip-existing dist/*
                         fi
+    release:
+        working_directory: ~/app
+        docker:
+            -   image: debian:stretch
+        steps:
+            -   checkout
+            -   setup_remote_docker
+            -   run:
+                    name: Build application Docker image
+                    command: |
+                        docker login --username automation --password $AUTOMATION_DOCKER_PASSWORD
+                        cd docker
+                        docker build -t praekeltfoundation/engage-rapidpro:latest .
+                        docker push praekeltfoundation/engage-rapidpro:latest
+
+                        # If this is a version then tag and push that too.
+                        if git describe | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"
+                        then
+                            VERSION=$(git describe)
+                            docker tag praekeltfoundation/engage-rapidpro:latest praekeltfoundation/engage-rapidpro:latest:$VERSION
+                            docker push praekeltfoundation/engage-rapidpro:$VERSION
+                        fi
