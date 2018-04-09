@@ -209,11 +209,16 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         wa_exists = record['wa_exists']
 
         contact = contacts_and_msisdns.get(msisdn)
-        has_whatsapp_value = YES if wa_exists is True else NO
+        if wa_exists is True:
+            contact.set_field(
+                user=org.administrators.first(),
+                key=has_whatsapp.key, value=YES)
+        elif wa_exists is False:
+            contact.set_field(
+                user=org.administrators.first(),
+                key=has_whatsapp.key, value=NO)
 
         contact.set_field(
             user=org.administrators.first(),
-            key=has_whatsapp.key, value=has_whatsapp_value)
-        contact.set_field(
-            user=org.administrators.first(),
             key=has_whatsapp_timestamp.key, value=timezone.now())
+
