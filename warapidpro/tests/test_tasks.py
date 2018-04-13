@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 
-from temba.channels.models import Channel
+from temba.channels.models import Channel, Org
 from warapidpro.types import WhatsAppDirectType
 from warapidpro.models import (
     has_whatsapp_contactfield,
@@ -251,6 +251,16 @@ class ContactRefreshTaskTestCase(TembaTest):
 
     @responses.activate
     @patch.object(check_contact_whatsappable, 'delay')
+    def test_check_org_whatsappable_no_contacts(self, mock_check):
+        user = self.create_user("joe")
+        org = Org.objects.create(
+            name="Test Org", timezone="Africa/Johannesburg",
+            created_by=user, modified_by=user)
+        check_org_whatsappable(org.pk)
+        self.assertFalse(mock_check.called)
+
+    @responses.activate
+    @patch.object(check_contact_whatsappable, 'delay')
     def test_refresh_org_whatsappable(self, mock_check):
         joe = self.create_contact("Joe Biden", "+254788383383")
 
@@ -264,3 +274,13 @@ class ContactRefreshTaskTestCase(TembaTest):
             value=(timezone.now() - timedelta(days=7)))
         refresh_org_whatsappable(joe.org.pk, delta=timedelta(days=6))
         mock_check.assert_called_with([joe.pk], self.new_style_channel.pk)
+
+    @responses.activate
+    @patch.object(check_contact_whatsappable, 'delay')
+    def test_refresh_org_whatsappable_no_contacts(self, mock_check):
+        user = self.create_user("joe")
+        org = Org.objects.create(
+            name="Test Org", timezone="Africa/Johannesburg",
+            created_by=user, modified_by=user)
+        refresh_org_whatsappable(org.pk, delta=timedelta(days=6))
+        self.assertFalse(mock_check.called)

@@ -121,6 +121,9 @@ def check_org_whatsappable(org_pk, sample_size=100):
         LIMIT %s
         """, [org.pk, has_whatsapp.pk, has_whatsapp_timestamp.pk, sample_size])
 
+    if not new_contacts:
+        return
+
     check_contact_whatsappable.delay(
         [contact.pk for contact in new_contacts], channel.pk)
 
@@ -152,6 +155,9 @@ def refresh_org_whatsappable(org_pk, sample_size=100, delta=timedelta(days=7)):
         values__datetime_value__lte=timezone.now() - delta)
 
     selected_for_refreshing = needing_refreshing.order_by('?')[:sample_size]
+
+    if not selected_for_refreshing:
+        return
 
     check_contact_whatsappable.delay(
         [contact.pk for contact in selected_for_refreshing], channel.pk)
@@ -221,4 +227,3 @@ def check_contact_whatsappable(contact_pks, channel_pk):
         contact.set_field(
             user=org.administrators.first(),
             key=has_whatsapp_timestamp.key, value=timezone.now())
-
