@@ -1,4 +1,3 @@
-import requests
 import urllib
 import logging
 
@@ -9,6 +8,7 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
+from warapidpro.utils import session_for_warapidpro
 
 from smartmin.views import SmartFormView
 
@@ -83,7 +83,8 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
 
         redirect_uri = self.get_redirect_uri()
 
-        response = requests.post(
+        session = session_for_warapidpro()
+        response = session.post(
             '%s/oauth/token/' % (wassup_url,), {
                 "grant_type": "authorization_code",
                 "code": code,
@@ -139,7 +140,8 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
             settings, 'WASSUP_API_URL', '%s/api/v1' % (DEFAULT_AUTH_URL,))
 
     def get_numbers(self, api_token):
-        response = requests.get(
+        session = session_for_warapidpro()
+        response = session.get(
             '%s/numbers/' % (self.wassup_url(),),
             headers={
                 'Authorization': 'Bearer %s' % (api_token),
@@ -156,7 +158,8 @@ class WhatsAppClaimView(ClaimViewMixin, SmartFormView):
         ) for number in self.get_numbers(api_token)]
 
     def get_groups(self, api_token):
-        response = requests.get(
+        session = session_for_warapidpro()
+        response = session.get(
             '%s/groups/' % (self.wassup_url(),),
             headers={
                 'Authorization': 'Bearer %s' % (api_token),
