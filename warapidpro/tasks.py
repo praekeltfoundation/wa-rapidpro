@@ -58,7 +58,8 @@ def refresh_channel_auth_tokens(delta=timedelta(minutes=5)):
     from temba.channels.models import Channel
     channels = Channel.objects.filter(
         Q(channel_type=WhatsAppDirectType.code) |
-        Q(channel_type=WhatsAppGroupType.code))
+        Q(channel_type=WhatsAppGroupType.code),
+        is_active=True)
     for channel in channels:
         config = channel.config_json()
         # This is for integrations that are pre-oauth
