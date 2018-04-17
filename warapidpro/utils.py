@@ -17,11 +17,12 @@ def session_for_warapidpro():
 def session_for_channel(channel):
     session = requests.Session()
     session.headers.update({
-        'User-Agent': 'warapidpro/%s (%s, %s)' % (
+        'User-Agent': 'warapidpro/%s (%s, %s, %s)' % (
             distribution.version,
             (channel.org.name
              if channel.org
-             else ('%s/%s' % (channel.channel_type, channel.pk))),
+             else 'Unknown Org'),
+            '%s/%s' % (channel.channel_type, channel.pk),
             settings.HOSTNAME)
     })
     return session
