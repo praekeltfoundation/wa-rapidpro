@@ -12,6 +12,13 @@ Wassup Integration for RapidPro.
 
     docker run praekeltfoundation/rapidpro-engage:latest
 
+.. note::
+    This code was developed for RapidPro version v3.0.136p18 which is a Dockerized version maintained by Praekelt.org at https://github.com/praekeltfoundation/rapidpro-docker.
+    Native support for WhatsApp is being added in version 4 through Courier, going forward that will be the preferred method of integration.
+
+    Currently Courier does not yet support media messaging which is something that wa-rapidpro does support.
+
+
 
 Setting up the application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
